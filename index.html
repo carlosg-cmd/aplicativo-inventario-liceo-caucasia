@@ -56,7 +56,7 @@
         </form>
 
         <div id="login-mode-badge" style="text-align: center; margin-top: 1rem; font-size: 0.78rem; color: var(--text-subtle);">
-          Modo Offline (sin Supabase) — Contraseña local activa
+          <span style="color: var(--accent-emerald);">🔒 Conectado a Supabase Auth — Requiere credenciales verificadas.</span>
         </div>
 
         <div style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-subtle);">
@@ -498,24 +498,7 @@
 
             <!-- TARJETA 2: Conexión Nube & Reseed -->
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-              <div class="card">
-                <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="database"></i> Conexión Nube (Supabase)</h3>
-                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
-                  El sistema opera primariamente <strong>offline en IndexedDB</strong>. Si deseas respaldar con Supabase PostgreSQL, ingresa tus llaves.
-                </p>
 
-                <form id="config-form" onsubmit="event.preventDefault(); localStorage.setItem('supabase_url', document.getElementById('config-sp-url').value); localStorage.setItem('supabase_key', document.getElementById('config-sp-key').value); SyncManager.initSupabaseClient(); UI.toast('Configuración guardada.', 'success');">
-                  <div class="form-group">
-                    <label for="config-sp-url">URL del Proyecto Supabase</label>
-                    <input type="text" id="config-sp-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
-                  </div>
-                  <div class="form-group">
-                    <label for="config-sp-key">API Anon Key Supabase</label>
-                    <input type="password" id="config-sp-key" class="form-control" placeholder="eyJhbGciOiJIUzI1Ni...">
-                  </div>
-                  <button type="submit" class="btn btn-primary">Guardar Credenciales</button>
-                </form>
-              </div>
 
               <div class="card">
                 <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="refresh-cw"></i> Datos de Demostración</h3>
@@ -527,32 +510,7 @@
                 </button>
               </div>
 
-              <!-- TARJETA: Seguridad / Cambio de Contraseña Local -->
-              <div class="card" id="local-password-card">
-                <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="key-round"></i> Seguridad — Contraseña Local</h3>
-                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
-                  Activa solo en <strong>Modo Offline</strong>. Con Supabase configurado, gestiona usuarios desde el panel de Supabase → Authentication.
-                </p>
-                <form id="local-password-form">
-                  <div class="form-group">
-                    <label for="lp-email">Correo del Administrador</label>
-                    <input type="email" id="lp-email" class="form-control" placeholder="admin@tienda.com">
-                  </div>
-                  <div class="form-group">
-                    <label for="lp-current">Contraseña Actual</label>
-                    <input type="password" id="lp-current" class="form-control" placeholder="Contraseña actual">
-                  </div>
-                  <div class="form-group">
-                    <label for="lp-new">Nueva Contraseña (mín. 6 caracteres)</label>
-                    <input type="password" id="lp-new" class="form-control" placeholder="Nueva contraseña">
-                  </div>
-                  <div class="form-group">
-                    <label for="lp-confirm">Confirmar Nueva Contraseña</label>
-                    <input type="password" id="lp-confirm" class="form-control" placeholder="Repite la nueva contraseña">
-                  </div>
-                  <button type="submit" class="btn btn-secondary" style="width: 100%;">Actualizar Contraseña Local</button>
-                </form>
-              </div>
+
             </div>
 
           </div>
