@@ -1,0 +1,247 @@
+/* ==========================================================================
+   CONTA-SMART SENA - Views CSS
+   ========================================================================== */
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stock-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stock-alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.stock-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stock-item-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.stock-item-cat {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+.stock-count-badge {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Timeline Transactions */
+.transaction-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-item:last-child {
+  border-bottom: none;
+}
+
+.timeline-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.timeline-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-icon.sale { background: var(--success-bg); color: var(--success); }
+.timeline-icon.expense { background: var(--danger-bg); color: var(--danger); }
+
+.timeline-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.timeline-time {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+.timeline-amount {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.timeline-amount.income { color: var(--accent-emerald); }
+.timeline-amount.expense { color: var(--accent-rose); }
+
+/* Filter Headers */
+.view-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-filter-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  max-width: 500px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-input-wrapper input {
+  padding-left: 2.5rem;
+}
+
+.search-input-wrapper svg {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  width: 18px;
+  height: 18px;
+}
+
+/* Cash Close Special Card */
+.cash-close-hero {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.close-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.close-summary-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.close-summary-box .val {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+/* Accounting Charts & Statement */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.chart-card-body {
+  position: relative;
+  height: 320px;
+  width: 100%;
+}
+
+.income-statement-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.statement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed var(--border-color);
+  font-size: 0.925rem;
+}
+
+.statement-row.header {
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--primary);
+}
+
+.statement-row.subtotal {
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.02);
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.statement-row.final {
+  font-weight: 800;
+  font-size: 1.2rem;
+  border-bottom: none;
+  border-top: 2px solid var(--primary);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  color: var(--accent-emerald);
+}
+
+/* Responsive View Rules */
+@media (max-width: 992px) {
+  .dashboard-grid, .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
