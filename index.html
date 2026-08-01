@@ -50,10 +50,14 @@
             <label for="login-password">Contraseña</label>
             <input type="password" id="login-password" class="form-control" placeholder="••••••••" value="admin123" required>
           </div>
-          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+          <button type="submit" id="login-submit-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
             Iniciar Sesión
           </button>
         </form>
+
+        <div id="login-mode-badge" style="text-align: center; margin-top: 1rem; font-size: 0.78rem; color: var(--text-subtle);">
+          Modo Offline (sin Supabase) — Contraseña local activa
+        </div>
 
         <div style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-subtle);">
           Proyecto de Media Técnica SENA - Control Contable e Inventarios
@@ -238,7 +242,7 @@
         </section>
 
         <!-- ==========================================
-             VISTA 2: INVENTARIO
+             VISTA 2: INVENTARIO (ADAPTABLE + EXCEL)
              ========================================== -->
         <section id="view-inventario" class="view-page">
           <div class="view-header-bar">
@@ -252,7 +256,13 @@
               </select>
             </div>
 
-            <div style="display: flex; gap: 0.75rem;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-outline" onclick="ExcelImportModule.downloadTemplate()" title="Descarga plantilla con columnas según tu tipo de negocio">
+                <i data-lucide="download"></i> Descargar Plantilla Excel
+              </button>
+              <button class="btn btn-secondary" onclick="UI.openModal('excel-import-modal')" title="Carga un archivo Excel lleno con tus productos">
+                <i data-lucide="file-up"></i> Importar desde Excel
+              </button>
               <button class="btn btn-primary" onclick="InventoryModule.openNewProductModal()">
                 <i data-lucide="package-plus"></i> + Nuevo Producto
               </button>
@@ -261,16 +271,8 @@
 
           <div class="table-container">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Categoría</th>
-                  <th>Precio Compra</th>
-                  <th>Precio Venta</th>
-                  <th>Margen %</th>
-                  <th>Stock Disponible</th>
-                  <th>Acciones</th>
-                </tr>
+              <thead id="inventory-table-head">
+                <!-- Encabezados dinámicos segun el tipo de negocio -->
               </thead>
               <tbody id="inventory-table-body">
                 <!-- Se llena dinámicamente -->
@@ -439,36 +441,120 @@
         </section>
 
         <!-- ==========================================
-             VISTA 7: CONFIGURACIÓN
+             VISTA 7: CONFIGURACIÓN (TIPO DE NEGOCIO + CONSTRUCTOR)
              ========================================== -->
         <section id="view-configuracion" class="view-page">
-          <div class="card" style="max-width: 650px;">
-            <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="database"></i> Conexión Nube (Supabase)</h3>
-            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
-              El sistema opera primariamente de forma <strong>offline en IndexedDB</strong>. Si deseas respaldar en tiempo real con PostgreSQL en la nube, ingresa tus llaves de proyecto Supabase.
-            </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            
+            <!-- TARJETA 1: Tipo de Negocio & Plantilla -->
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="store"></i> Adaptación por Tipo de Negocio</h3>
+              <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                Selecciona la plantilla de inventario adaptada a la naturaleza de tu establecimiento:
+              </p>
 
-            <form id="config-form" onsubmit="event.preventDefault(); localStorage.setItem('supabase_url', document.getElementById('config-sp-url').value); localStorage.setItem('supabase_key', document.getElementById('config-sp-key').value); SyncManager.initSupabaseClient(); UI.toast('Configuración guardada.', 'success');">
               <div class="form-group">
-                <label for="config-sp-url">URL del Proyecto Supabase</label>
-                <input type="text" id="config-sp-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
+                <label for="config-business-type-select">Giro Commercial / Tipo de Negocio</label>
+                <select id="config-business-type-select" class="form-control" onchange="BusinessConfigModule.changeBusinessType(this.value)">
+                  <option value="carniceria">Carnicería (Cortes, Peso Kg)</option>
+                  <option value="farmacia">Farmacia (Laboratorio, Lote, Vencimiento)</option>
+                  <option value="tienda_barrio">Tienda de Barrio / Abarrotes</option>
+                  <option value="ropa_calzado">Almacén de Ropa y Calzado (Tallas, Colores)</option>
+                  <option value="personalizado">Otro / Personalizado (Campos propios)</option>
+                </select>
               </div>
-              <div class="form-group">
-                <label for="config-sp-key">API Anon Key Supabase</label>
-                <input type="password" id="config-sp-key" class="form-control" placeholder="eyJhbGciOiJIUzI1Ni...">
+
+              <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+              <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Campos de Producto de la Plantilla</h4>
+              <p style="color: var(--text-subtle); font-size: 0.8rem; margin-bottom: 1rem;">
+                Estructura activa para el formulario y la importación en Excel:
+              </p>
+
+              <div id="custom-fields-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <!-- Lista de campos dinámicos -->
               </div>
-              <button type="submit" class="btn btn-primary">Guardar Credenciales</button>
-            </form>
 
-            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+              <!-- Formulario de Agregar Campo Personalizado -->
+              <div style="background: var(--bg-main); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <h5 style="font-size: 0.9rem; margin-bottom: 0.75rem;">+ Agregar Campo Personalizado</h5>
+                <div class="form-row" style="margin-bottom: 0.75rem;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <input type="text" id="custom-field-name-input" class="form-control" placeholder="Ej: Marca, Ubicación, Lote">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <select id="custom-field-type-select" class="form-control">
+                      <option value="texto">Texto (General)</option>
+                      <option value="numerico">Numérico (Cantidad/Valor)</option>
+                      <option value="fecha">Fecha (AAAA-MM-DD)</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="BusinessConfigModule.addCustomField(document.getElementById('custom-field-name-input').value, document.getElementById('custom-field-type-select').value); document.getElementById('custom-field-name-input').value = '';">
+                  Guardar Nuevo Campo
+                </button>
+              </div>
+            </div>
 
-            <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="refresh-cw"></i> Restablecer Datos de Demostración</h3>
-            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
-              Carga un conjunto de productos, ventas y gastos de prueba ideal para evaluaciones de la media técnica SENA.
-            </p>
-            <button class="btn btn-danger" onclick="UI.confirm({ title: 'Restablecer Datos', message: '¿Deseas recargar los datos semilla de prueba SENA?', onConfirm: async () => { await IDB.clearStore('productos'); await IDB.clearStore('ventas'); await IDB.clearStore('gastos'); await IDB.clearStore('cierres_diarios'); await MockData.seedIfEmpty(); location.reload(); } })">
-              Re-sembrar Datos SENA
-            </button>
+            <!-- TARJETA 2: Conexión Nube & Reseed -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <div class="card">
+                <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="database"></i> Conexión Nube (Supabase)</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                  El sistema opera primariamente <strong>offline en IndexedDB</strong>. Si deseas respaldar con Supabase PostgreSQL, ingresa tus llaves.
+                </p>
+
+                <form id="config-form" onsubmit="event.preventDefault(); localStorage.setItem('supabase_url', document.getElementById('config-sp-url').value); localStorage.setItem('supabase_key', document.getElementById('config-sp-key').value); SyncManager.initSupabaseClient(); UI.toast('Configuración guardada.', 'success');">
+                  <div class="form-group">
+                    <label for="config-sp-url">URL del Proyecto Supabase</label>
+                    <input type="text" id="config-sp-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
+                  </div>
+                  <div class="form-group">
+                    <label for="config-sp-key">API Anon Key Supabase</label>
+                    <input type="password" id="config-sp-key" class="form-control" placeholder="eyJhbGciOiJIUzI1Ni...">
+                  </div>
+                  <button type="submit" class="btn btn-primary">Guardar Credenciales</button>
+                </form>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="refresh-cw"></i> Datos de Demostración</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
+                  Carga datos semilla de prueba ideales para la evaluación SENA.
+                </p>
+                <button class="btn btn-danger" onclick="UI.confirm({ title: 'Restablecer Datos', message: '¿Deseas recargar los datos semilla de prueba SENA?', onConfirm: async () => { await IDB.clearStore('productos'); await IDB.clearStore('ventas'); await IDB.clearStore('gastos'); await IDB.clearStore('cierres_diarios'); await IDB.clearStore('configuracion'); await MockData.seedIfEmpty(); location.reload(); } })">
+                  Re-sembrar Datos SENA
+                </button>
+              </div>
+
+              <!-- TARJETA: Seguridad / Cambio de Contraseña Local -->
+              <div class="card" id="local-password-card">
+                <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="key-round"></i> Seguridad — Contraseña Local</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                  Activa solo en <strong>Modo Offline</strong>. Con Supabase configurado, gestiona usuarios desde el panel de Supabase → Authentication.
+                </p>
+                <form id="local-password-form">
+                  <div class="form-group">
+                    <label for="lp-email">Correo del Administrador</label>
+                    <input type="email" id="lp-email" class="form-control" placeholder="admin@tienda.com">
+                  </div>
+                  <div class="form-group">
+                    <label for="lp-current">Contraseña Actual</label>
+                    <input type="password" id="lp-current" class="form-control" placeholder="Contraseña actual">
+                  </div>
+                  <div class="form-group">
+                    <label for="lp-new">Nueva Contraseña (mín. 6 caracteres)</label>
+                    <input type="password" id="lp-new" class="form-control" placeholder="Nueva contraseña">
+                  </div>
+                  <div class="form-group">
+                    <label for="lp-confirm">Confirmar Nueva Contraseña</label>
+                    <input type="password" id="lp-confirm" class="form-control" placeholder="Repite la nueva contraseña">
+                  </div>
+                  <button type="submit" class="btn btn-secondary" style="width: 100%;">Actualizar Contraseña Local</button>
+                </form>
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -480,7 +566,7 @@
        MODALES DE LA APLICACIÓN
        ========================================== -->
 
-  <!-- Modal: Nuevo/Editar Producto -->
+  <!-- Modal: Nuevo/Editar Producto (DINÁMICO) -->
   <div id="product-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -490,34 +576,8 @@
       <form id="product-form">
         <div class="modal-body">
           <input type="hidden" id="product-id">
-          <div class="form-group">
-            <label for="product-name">Nombre del Producto</label>
-            <input type="text" id="product-name" class="form-control" placeholder="Ej: Tenis Deportivos Pro" required>
-          </div>
-          <div class="form-group">
-            <label for="product-category-select">Categoría</label>
-            <select id="product-category-select" class="form-control" required></select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="product-cost">Precio Compra ($)</label>
-              <input type="number" id="product-cost" class="form-control" min="0" placeholder="85000" required>
-            </div>
-            <div class="form-group">
-              <label for="product-price">Precio Venta ($)</label>
-              <input type="number" id="product-price" class="form-control" min="0" placeholder="145000" required>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="product-stock">Stock Inicial</label>
-              <input type="number" id="product-stock" class="form-control" min="0" placeholder="10" required>
-            </div>
-            <div class="form-group">
-              <label for="product-stock-min">Stock Mínimo (Alerta)</label>
-              <input type="number" id="product-stock-min" class="form-control" min="1" placeholder="5" required>
-            </div>
-          </div>
+          <!-- Contenedor dinámico generado según el tipo de negocio activo -->
+          <div id="dynamic-product-fields"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="UI.closeModal('product-modal')">Cancelar</button>
@@ -527,7 +587,81 @@
     </div>
   </div>
 
-  <!-- Modal: Reabastecimiento / Entrada de Stock -->
+  <!-- Modal: Importar desde Excel (.xlsx) -->
+  <div id="excel-import-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Importar Productos desde Excel</h3>
+        <button class="close-btn" onclick="UI.closeModal('excel-import-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+          Selecciona tu archivo de hoja de cálculo Excel (<strong>.xlsx</strong>). Asegúrate de utilizar la estructura de columnas de tu tipo de negocio.
+        </p>
+
+        <div style="background: var(--bg-main); padding: 1.5rem; border-radius: var(--radius-md); border: 2px dashed var(--border-color); text-align: center; margin-bottom: 1.25rem;">
+          <i data-lucide="file-spreadsheet" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 0.75rem;"></i>
+          <div style="font-weight: 600; margin-bottom: 0.5rem;">Seleccionar Archivo Excel</div>
+          <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="form-control" style="max-width: 320px; margin: 0 auto;">
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--text-subtle);">
+          💡 Tip: Si aún no tienes la estructura de archivo, haz clic primero en <strong>"Descargar Plantilla Excel"</strong> en la pantalla de inventario.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="UI.closeModal('excel-import-modal')">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="ExcelImportModule.processExcelFile(document.getElementById('excel-file-input').files[0])">
+          Procesar e Importar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Resumen / Reporte de Errores de Importación -->
+  <div id="excel-result-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Resultado de la Importación Masiva</h3>
+        <button class="close-btn" onclick="UI.closeModal('excel-result-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="flex: 1; background: var(--success-bg); border: 1px solid var(--success); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--success); font-weight: 700; uppercase;">IMPORTADOS CON ÉXITO</div>
+            <div id="excel-report-success-count" style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--success);">0</div>
+          </div>
+          <div style="flex: 1; background: var(--danger-bg); border: 1px solid var(--danger); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--danger); font-weight: 700; uppercase;">FILAS CON ERROR</div>
+            <div id="excel-report-error-count" style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--danger);">0</div>
+          </div>
+        </div>
+
+        <div id="excel-report-errors-container" style="display: none;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--danger);">Detalle de Filas Omitidas por Errores de Validación:</h4>
+          <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fila</th>
+                  <th>Producto</th>
+                  <th>Motivo del Error</th>
+                </tr>
+              </thead>
+              <tbody id="excel-report-errors-body">
+                <!-- Errores dinámicos -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="UI.closeModal('excel-result-modal')">Aceptar y Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resto de Modales (Reabastecer, Venta, Gasto, Nómina, Cierre) -->
   <div id="restock-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -569,7 +703,6 @@
     </div>
   </div>
 
-  <!-- Modal: Registrar Venta -->
   <div id="sale-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -599,7 +732,6 @@
     </div>
   </div>
 
-  <!-- Modal: Registrar Gasto General -->
   <div id="expense-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -635,7 +767,6 @@
     </div>
   </div>
 
-  <!-- Modal: Registrar Pago de Nómina -->
   <div id="payroll-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -665,7 +796,6 @@
     </div>
   </div>
 
-  <!-- Modal: Cierre de Caja Diario (Confirmación Inmutable) -->
   <div id="cash-close-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -715,12 +845,14 @@
   <script src="js/db/mockData.js"></script>
   <script src="js/db/sync.js"></script>
   <script src="js/modules/auth.js"></script>
+  <script src="js/modules/businessConfig.js"></script>
   <script src="js/modules/inventory.js"></script>
   <script src="js/modules/sales.js"></script>
   <script src="js/modules/expenses.js"></script>
   <script src="js/modules/cashClose.js"></script>
   <script src="js/modules/accounting.js"></script>
   <script src="js/modules/reports.js"></script>
+  <script src="js/modules/excelImport.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
