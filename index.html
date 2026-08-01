@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Inventario y Contabilidad Comercial para PYMES - Proyecto SENA Media Técnica">
+  <title>ContaSmart SENA - Control de Inventario y Contabilidad</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Estilos CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css">
+
+  <!-- Librerías Externas CDN (Iconos, Gráficas, PDF, Excel y Supabase) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div id="app-container">
+
+    <!-- ==========================================
+         VISTA 0: AUTENTICACIÓN (LOGIN)
+         ========================================== -->
+    <div id="view-login" class="auth-container">
+      <div class="card" style="width: 100%; max-width: 420px; padding: 2.5rem; border-radius: var(--radius-xl);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <div class="brand-logo" style="margin: 0 auto 1rem; width: 56px; height: 56px; font-size: 1.75rem;">CS</div>
+          <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem;">ContaSmart SENA</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Sistema de Inventario y Contabilidad Comercial</p>
+          <div class="badge badge-info" style="margin-top: 0.75rem;">100% Funcional Offline / Supabase Sync</div>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-email">Correo Electrónico (Admin)</label>
+            <input type="email" id="login-email" class="form-control" placeholder="admin@tienda.com" value="admin@tienda.com" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" value="admin123" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+            Iniciar Sesión
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-subtle);">
+          Proyecto de Media Técnica SENA - Control Contable e Inventarios
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SIDEBAR DE NAVEGACIÓN
+         ========================================== -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">CS</div>
+        <div class="brand-info">
+          <span class="brand-title">ContaSmart</span>
+          <span class="brand-subtitle">PROYECTO SENA</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Principal</div>
+        <a class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-view="inventario">
+          <i data-lucide="package"></i>
+          <span>Inventario</span>
+        </a>
+        <a class="nav-item" data-view="ventas">
+          <i data-lucide="shopping-cart"></i>
+          <span>Ventas</span>
+        </a>
+        <a class="nav-item" data-view="gastos">
+          <i data-lucide="receipt"></i>
+          <span>Gastos y Nómina</span>
+        </a>
+
+        <div class="nav-section-title" style="margin-top: 1rem;">Contabilidad</div>
+        <a class="nav-item" data-view="cierres">
+          <i data-lucide="lock"></i>
+          <span>Cierres de Caja</span>
+        </a>
+        <a class="nav-item" data-view="contabilidad">
+          <i data-lucide="line-chart"></i>
+          <span>Estado de Resultados</span>
+        </a>
+        <a class="nav-item" data-view="configuracion">
+          <i data-lucide="settings"></i>
+          <span>Configuración</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar">AD</div>
+          <div class="user-details">
+            <div class="user-name">Administrador</div>
+            <div class="user-role">Propietario</div>
+          </div>
+          <button id="btn-logout" class="action-btn" title="Cerrar Sesión">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================
+         LAYOUT PRINCIPAL (HEADER + VISTAS)
+         ========================================== -->
+    <div id="main-wrapper" class="main-wrapper">
+      
+      <!-- TOP HEADER -->
+      <header class="top-header">
+        <div class="header-left">
+          <button id="mobile-menu-toggle" class="mobile-menu-btn">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="header-title-container">
+            <h1 id="header-page-title">Dashboard Principal</h1>
+            <p id="header-page-desc">Resumen del día y estado contable</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Indicador de Red / Sincronización -->
+          <div id="sync-status-badge" class="sync-badge online" onclick="SyncManager.syncPendingData()" title="Haz clic para forzar sincronización">
+            <span class="sync-dot"></span>
+            <span id="sync-status-text">En línea</span>
+          </div>
+
+          <!-- Botón Destacado de Cierre Diario -->
+          <button id="btn-close-day-header" class="btn btn-success btn-sm" onclick="CashCloseModule.openCloseDayModal()">
+            <i data-lucide="shield-check"></i>
+            <span>Cerrar el Día</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENIDO DE VISTAS (SPA) -->
+      <main class="content-body">
+
+        <!-- ==========================================
+             VISTA 1: DASHBOARD
+             ========================================== -->
+        <section id="view-dashboard" class="view-page active">
+          <!-- KPIs Resumen del Día -->
+          <div class="kpi-grid">
+            <div class="kpi-card sales">
+              <div class="kpi-info">
+                <span class="kpi-label">Ventas de Hoy</span>
+                <span id="kpi-today-sales" class="kpi-value">$0</span>
+                <span class="kpi-subtext">Ingresos diarios acumulados</span>
+              </div>
+              <div class="kpi-icon"><i data-lucide="trending-up"></i></div>
+            </div>
+
+            <div class="kpi-card expenses">
+              <div class="kpi-info">
+                <span class="kpi-label">Gastos / Egresos Hoy</span>
+                <span id="kpi-today-expenses" class="kpi-value">$0</span>
+                <span class="kpi-subtext">Incluye compras y nómina</span>
+              </div>
+              <div class="kpi-icon"><i data-lucide="trending-down"></i></div>
+            </div>
+
+            <div class="kpi-card net">
+              <div class="kpi-info">
+                <span class="kpi-label">Saldo Neto Hoy</span>
+                <span id="kpi-today-net" class="kpi-value">$0</span>
+                <span class="kpi-subtext">Ventas menos Gastos</span>
+              </div>
+              <div class="kpi-icon"><i data-lucide="wallet"></i></div>
+            </div>
+
+            <div class="kpi-card monthly">
+              <div class="kpi-info">
+                <span class="kpi-label">Utilidad del Mes</span>
+                <span id="kpi-monthly-profit" class="kpi-value">$0</span>
+                <span class="kpi-subtext">Acumulado mes en curso</span>
+              </div>
+              <div class="kpi-icon"><i data-lucide="pie-chart"></i></div>
+            </div>
+          </div>
+
+          <!-- Barra de Acciones Rápidas -->
+          <div class="action-bar">
+            <button class="btn btn-primary" onclick="SalesModule.openNewSaleModal()">
+              <i data-lucide="plus-circle"></i> + Registrar Venta
+            </button>
+            <button class="btn btn-secondary" onclick="ExpensesModule.openNewExpenseModal()">
+              <i data-lucide="minus-circle"></i> + Registrar Gasto
+            </button>
+            <button class="btn btn-secondary" onclick="ExpensesModule.openNewPayrollModal()">
+              <i data-lucide="user-check"></i> + Registrar Nómina
+            </button>
+            <button class="btn btn-outline" onclick="ReportsModule.exportFullExcelReport()">
+              <i data-lucide="file-spreadsheet"></i> Exportar a Excel
+            </button>
+          </div>
+
+          <!-- Dashboard Grid: Transacciones & Alertas Stock -->
+          <div class="dashboard-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="activity"></i> Transacciones Recientes de Hoy</h3>
+              </div>
+              <div id="dashboard-recent-transactions" class="transaction-timeline">
+                <!-- Se llena dinámicamente -->
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="alert-triangle"></i> Alertas de Stock</h3>
+              </div>
+              <div id="dashboard-stock-alerts">
+                <!-- Se llena dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 2: INVENTARIO
+             ========================================== -->
+        <section id="view-inventario" class="view-page">
+          <div class="view-header-bar">
+            <div class="search-filter-box">
+              <div class="search-input-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-product-input" class="form-control" placeholder="Buscar por nombre o código...">
+              </div>
+              <select id="filter-category-select" class="form-control" style="max-width: 200px;">
+                <option value="">Todas las Categorías</option>
+              </select>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-primary" onclick="InventoryModule.openNewProductModal()">
+                <i data-lucide="package-plus"></i> + Nuevo Producto
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Precio Compra</th>
+                  <th>Precio Venta</th>
+                  <th>Margen %</th>
+                  <th>Stock Disponible</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 3: VENTAS
+             ========================================== -->
+        <section id="view-ventas" class="view-page">
+          <div class="view-header-bar">
+            <div class="search-filter-box">
+              <div class="search-input-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-sales-input" class="form-control" placeholder="Buscar producto vendido...">
+              </div>
+              <input type="date" id="filter-sales-date" class="form-control" style="max-width: 180px;">
+            </div>
+
+            <button class="btn btn-primary" onclick="SalesModule.openNewSaleModal()">
+              <i data-lucide="shopping-bag"></i> + Registrar Venta
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Producto & Fecha</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unitario</th>
+                  <th>Valor Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="sales-table-body">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 4: GASTOS Y NÓMINA
+             ========================================== -->
+        <section id="view-gastos" class="view-page">
+          <div class="view-header-bar">
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-primary" onclick="ExpensesModule.openNewExpenseModal()">
+                <i data-lucide="minus-circle"></i> + Registrar Gasto
+              </button>
+              <button class="btn btn-secondary" onclick="ExpensesModule.openNewPayrollModal()">
+                <i data-lucide="users"></i> + Registrar Nómina
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Descripción & Empleado</th>
+                  <th>Categoría</th>
+                  <th>Valor Pagado</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="expenses-table-body">
+                <!-- Se llena dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 5: CIERRES DE CAJA
+             ========================================== -->
+        <section id="view-cierres" class="view-page">
+          <div class="cash-close-hero">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 style="font-size: 1.4rem;">Cierre de Caja Diario (Control Inmutable)</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">El cierre de caja suma todas las ventas y egresos del día y congela las modificaciones contables.</p>
+              </div>
+              <div id="cash-close-banner-state">
+                <!-- Se llena dinámicamente -->
+              </div>
+            </div>
+            <button class="btn btn-success btn-lg" onclick="CashCloseModule.openCloseDayModal()" style="align-self: flex-start;">
+              <i data-lucide="shield-check"></i> Ejecutar Cierre Diario de Hoy
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i data-lucide="history"></i> Historial de Cierres Diarios</h3>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fecha & Hora</th>
+                    <th>Ventas Totales</th>
+                    <th>Gastos Totales</th>
+                    <th>Saldo Neto</th>
+                    <th>Estado</th>
+                    <th>Comprobante PDF</th>
+                  </tr>
+                </thead>
+                <tbody id="closures-table-body">
+                  <!-- Se llena dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 6: CONTABILIDAD MENSUAL
+             ========================================== -->
+        <section id="view-contabilidad" class="view-page">
+          <div class="view-header-bar">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <label style="font-weight: 600;">Período Contable:</label>
+              <select id="accounting-month-select" class="form-control" style="width: 140px;" onchange="AccountingModule.changePeriod(this.value, document.getElementById('accounting-year-select').value)"></select>
+              <select id="accounting-year-select" class="form-control" style="width: 100px;" onchange="AccountingModule.changePeriod(document.getElementById('accounting-month-select').value, this.value)"></select>
+            </div>
+
+            <button class="btn btn-outline" onclick="ReportsModule.exportFullExcelReport()">
+              <i data-lucide="download"></i> Exportar Balance Completo Excel
+            </button>
+          </div>
+
+          <!-- Estado de Resultados Simplificado -->
+          <div class="income-statement-card">
+            <h3 class="card-title" style="margin-bottom: 1.25rem;"><i data-lucide="file-text"></i> Estado de Resultados Simplificado</h3>
+            <div id="income-statement-rows">
+              <!-- Se llena dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Gráficas Financieras -->
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="bar-chart-2"></i> Evolución Diaria: Ingresos vs. Egresos</h3>
+              </div>
+              <div class="chart-card-body">
+                <canvas id="incomeVsExpensesCanvas"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="pie-chart"></i> Gastos por Categoría</h3>
+              </div>
+              <div class="chart-card-body">
+                <canvas id="expensesCategoryCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 7: CONFIGURACIÓN
+             ========================================== -->
+        <section id="view-configuracion" class="view-page">
+          <div class="card" style="max-width: 650px;">
+            <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="database"></i> Conexión Nube (Supabase)</h3>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+              El sistema opera primariamente de forma <strong>offline en IndexedDB</strong>. Si deseas respaldar en tiempo real con PostgreSQL en la nube, ingresa tus llaves de proyecto Supabase.
+            </p>
+
+            <form id="config-form" onsubmit="event.preventDefault(); localStorage.setItem('supabase_url', document.getElementById('config-sp-url').value); localStorage.setItem('supabase_key', document.getElementById('config-sp-key').value); SyncManager.initSupabaseClient(); UI.toast('Configuración guardada.', 'success');">
+              <div class="form-group">
+                <label for="config-sp-url">URL del Proyecto Supabase</label>
+                <input type="text" id="config-sp-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
+              </div>
+              <div class="form-group">
+                <label for="config-sp-key">API Anon Key Supabase</label>
+                <input type="password" id="config-sp-key" class="form-control" placeholder="eyJhbGciOiJIUzI1Ni...">
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar Credenciales</button>
+            </form>
+
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+
+            <h3 class="card-title" style="margin-bottom: 1rem;"><i data-lucide="refresh-cw"></i> Restablecer Datos de Demostración</h3>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
+              Carga un conjunto de productos, ventas y gastos de prueba ideal para evaluaciones de la media técnica SENA.
+            </p>
+            <button class="btn btn-danger" onclick="UI.confirm({ title: 'Restablecer Datos', message: '¿Deseas recargar los datos semilla de prueba SENA?', onConfirm: async () => { await IDB.clearStore('productos'); await IDB.clearStore('ventas'); await IDB.clearStore('gastos'); await IDB.clearStore('cierres_diarios'); await MockData.seedIfEmpty(); location.reload(); } })">
+              Re-sembrar Datos SENA
+            </button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODALES DE LA APLICACIÓN
+       ========================================== -->
+
+  <!-- Modal: Nuevo/Editar Producto -->
+  <div id="product-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="product-modal-title" class="modal-title">Nuevo Producto</h3>
+        <button class="close-btn" onclick="UI.closeModal('product-modal')">&times;</button>
+      </div>
+      <form id="product-form">
+        <div class="modal-body">
+          <input type="hidden" id="product-id">
+          <div class="form-group">
+            <label for="product-name">Nombre del Producto</label>
+            <input type="text" id="product-name" class="form-control" placeholder="Ej: Tenis Deportivos Pro" required>
+          </div>
+          <div class="form-group">
+            <label for="product-category-select">Categoría</label>
+            <select id="product-category-select" class="form-control" required></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="product-cost">Precio Compra ($)</label>
+              <input type="number" id="product-cost" class="form-control" min="0" placeholder="85000" required>
+            </div>
+            <div class="form-group">
+              <label for="product-price">Precio Venta ($)</label>
+              <input type="number" id="product-price" class="form-control" min="0" placeholder="145000" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="product-stock">Stock Inicial</label>
+              <input type="number" id="product-stock" class="form-control" min="0" placeholder="10" required>
+            </div>
+            <div class="form-group">
+              <label for="product-stock-min">Stock Mínimo (Alerta)</label>
+              <input type="number" id="product-stock-min" class="form-control" min="1" placeholder="5" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="UI.closeModal('product-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Reabastecimiento / Entrada de Stock -->
+  <div id="restock-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Entrada de Mercancía / Reabastecer</h3>
+        <button class="close-btn" onclick="UI.closeModal('restock-modal')">&times;</button>
+      </div>
+      <form id="restock-form">
+        <div class="modal-body">
+          <input type="hidden" id="restock-product-id">
+          <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+            <div style="font-size: 0.8rem; color: var(--text-subtle);">Producto a Reabastecer:</div>
+            <div id="restock-product-name" style="font-weight: 700; font-size: 1.1rem; color: var(--primary);"></div>
+            <div style="font-size: 0.85rem; margin-top: 0.25rem;">Stock Actual: <strong id="restock-current-stock"></strong> unid.</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="restock-qty">Cantidad a Sumar</label>
+              <input type="number" id="restock-qty" class="form-control" min="1" value="10" required>
+            </div>
+            <div class="form-group">
+              <label for="restock-cost">Costo Unitario ($)</label>
+              <input type="number" id="restock-cost" class="form-control" min="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="restock-supplier">Proveedor / Referencia</label>
+            <input type="text" id="restock-supplier" class="form-control" placeholder="Ej: Distribuidora Nacional S.A.S">
+          </div>
+          <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="restock-auto-expense" checked style="width: 18px; height: 18px;">
+            <label for="restock-auto-expense" style="cursor: pointer; margin-bottom: 0;">Registrar costo total automáticamente como Gasto a Proveedores</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="UI.closeModal('restock-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-success">Confirmar Entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Venta -->
+  <div id="sale-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Venta</h3>
+        <button class="close-btn" onclick="UI.closeModal('sale-modal')">&times;</button>
+      </div>
+      <form id="sale-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="sale-product-select">Producto</label>
+            <select id="sale-product-select" class="form-control" onchange="SalesModule.updateSalePreview()" required></select>
+          </div>
+          <div class="form-group">
+            <label for="sale-qty">Cantidad a Vender</label>
+            <input type="number" id="sale-qty" class="form-control" min="1" value="1" oninput="SalesModule.updateSalePreview()" required>
+          </div>
+          <div style="background: var(--bg-main); padding: 1.25rem; border-radius: var(--radius-md); text-align: center; margin-top: 1rem;">
+            <div style="font-size: 0.8rem; color: var(--text-subtle);">TOTAL A COBRAR</div>
+            <div id="sale-total-preview" style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--accent-emerald);">$0</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="UI.closeModal('sale-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Completar Venta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Gasto General -->
+  <div id="expense-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Gasto / Egreso</h3>
+        <button class="close-btn" onclick="UI.closeModal('expense-modal')">&times;</button>
+      </div>
+      <form id="expense-form">
+        <div class="modal-body">
+          <input type="hidden" id="expense-id">
+          <div class="form-group">
+            <label for="expense-desc">Descripción del Gasto</label>
+            <input type="text" id="expense-desc" class="form-control" placeholder="Ej: Pago de recibo de servicio eléctrico" required>
+          </div>
+          <div class="form-group">
+            <label for="expense-category">Categoría</label>
+            <select id="expense-category" class="form-control" required>
+              <option value="servicios">Servicios Públicos (Agua, Luz, Internet)</option>
+              <option value="arriendo">Arriendo de Local / Bodega</option>
+              <option value="proveedores">Compras a Proveedores / Mercancía</option>
+              <option value="otros">Otros Gastos Operativos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="expense-amount">Valor Pagado ($)</label>
+            <input type="number" id="expense-amount" class="form-control" min="1" placeholder="95000" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="UI.closeModal('expense-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar Gasto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Pago de Nómina -->
+  <div id="payroll-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Pago de Nómina / Salarios</h3>
+        <button class="close-btn" onclick="UI.closeModal('payroll-modal')">&times;</button>
+      </div>
+      <form id="payroll-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="payroll-employee">Nombre Completo del Empleado</label>
+            <input type="text" id="payroll-employee" class="form-control" placeholder="Ej: Carlos Restrepo" required>
+          </div>
+          <div class="form-group">
+            <label for="payroll-concept">Concepto de Pago</label>
+            <input type="text" id="payroll-concept" class="form-control" placeholder="Ej: Sueldo Quincena 1 - Agosto" value="Sueldo Quincenal" required>
+          </div>
+          <div class="form-group">
+            <label for="payroll-amount">Valor Pagado ($)</label>
+            <input type="number" id="payroll-amount" class="form-control" min="1" placeholder="350000" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="UI.closeModal('payroll-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-success">Registrar Pago Nómina</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cierre de Caja Diario (Confirmación Inmutable) -->
+  <div id="cash-close-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Cerrar el Día - Confirmación Contable</h3>
+        <button class="close-btn" onclick="UI.closeModal('cash-close-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid var(--warning); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--warning);">
+          <strong>ATENCIÓN (Cierre Inmutable SENA):</strong> Al ejecutar el cierre del día <strong id="close-modal-date"></strong>, el sistema bloqueará la edición o eliminación de ventas y gastos de esta fecha.
+        </div>
+
+        <div class="close-summary-grid">
+          <div class="close-summary-box">
+            <div style="font-size: 0.75rem; color: var(--text-subtle);">TOTAL VENTAS</div>
+            <div id="close-modal-sales" class="val" style="color: var(--accent-emerald);">$0</div>
+            <div id="close-modal-sales-count" style="font-size: 0.725rem; color: var(--text-muted);"></div>
+          </div>
+          <div class="close-summary-box">
+            <div style="font-size: 0.75rem; color: var(--text-subtle);">TOTAL EGRESOS / NÓMINA</div>
+            <div id="close-modal-expenses" class="val" style="color: var(--accent-rose);">$0</div>
+            <div id="close-modal-expenses-count" style="font-size: 0.725rem; color: var(--text-muted);"></div>
+          </div>
+        </div>
+
+        <div class="close-summary-box" style="margin-top: 1rem; background: var(--bg-main);">
+          <div style="font-size: 0.8rem; color: var(--text-subtle);">SALDO NETO EN CAJA DIARIO</div>
+          <div id="close-modal-net" class="val" style="font-size: 2.2rem;">$0</div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1.25rem;">
+          <label for="close-modal-notes">Observaciones de Cierre (Opcional)</label>
+          <textarea id="close-modal-notes" class="form-control" rows="2" placeholder="Ej: Sin novedades, cuadre de caja perfecto con billetes en físico."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="UI.closeModal('cash-close-modal')">Cancelar</button>
+        <button type="button" class="btn btn-success btn-lg" onclick="CashCloseModule.executeCloseDay()">Confirmar & Cerrar Día</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts de la Aplicación -->
+  <script src="js/config.js"></script>
+  <script src="js/utils/formatters.js"></script>
+  <script src="js/utils/ui.js"></script>
+  <script src="js/db/idb.js"></script>
+  <script src="js/db/mockData.js"></script>
+  <script src="js/db/sync.js"></script>
+  <script src="js/modules/auth.js"></script>
+  <script src="js/modules/inventory.js"></script>
+  <script src="js/modules/sales.js"></script>
+  <script src="js/modules/expenses.js"></script>
+  <script src="js/modules/cashClose.js"></script>
+  <script src="js/modules/accounting.js"></script>
+  <script src="js/modules/reports.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
