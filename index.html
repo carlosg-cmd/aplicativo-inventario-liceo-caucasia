@@ -505,7 +505,7 @@
                 <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
                   Carga datos semilla de prueba ideales para la evaluación SENA.
                 </p>
-                <button class="btn btn-danger" onclick="UI.confirm({ title: 'Restablecer Datos', message: '¿Deseas recargar los datos semilla de prueba SENA?', onConfirm: async () => { await IDB.clearStore('productos'); await IDB.clearStore('ventas'); await IDB.clearStore('gastos'); await IDB.clearStore('cierres_diarios'); await IDB.clearStore('configuracion'); await MockData.seedIfEmpty(); location.reload(); } })">
+                <button class="btn btn-danger" onclick="UI.confirm({ title: 'Restablecer Datos', message: '¿Deseas recargar los datos semilla de prueba SENA?', onConfirm: async () => { await IDB.clearStore('productos'); await IDB.clearStore('ventas'); await IDB.clearStore('gastos'); await IDB.clearStore('cierres_diarios'); await IDB.clearStore('configuracion'); await MockData.seedAllData(); location.reload(); } })">
                   Re-sembrar Datos SENA
                 </button>
               </div>
@@ -796,21 +796,21 @@
   </div>
 
   <!-- Scripts de la Aplicación -->
-  <script src="js/config.js?v=1.2"></script>
-  <script src="js/utils/formatters.js?v=1.2"></script>
-  <script src="js/utils/ui.js?v=1.2"></script>
-  <script src="js/db/idb.js?v=1.2"></script>
-  <script src="js/db/mockData.js?v=1.2"></script>
-  <script src="js/db/sync.js?v=1.2"></script>
-  <script src="js/modules/auth.js?v=1.2"></script>
-  <script src="js/modules/businessConfig.js?v=1.2"></script>
-  <script src="js/modules/inventory.js?v=1.2"></script>
-  <script src="js/modules/sales.js?v=1.2"></script>
-  <script src="js/modules/expenses.js?v=1.2"></script>
-  <script src="js/modules/cashClose.js?v=1.2"></script>
-  <script src="js/modules/accounting.js?v=1.2"></script>
-  <script src="js/modules/reports.js?v=1.2"></script>
-  <script src="js/modules/excelImport.js?v=1.2"></script>
-  <script src="js/app.js?v=1.2"></script>
+  <script src="js/config.js?v=1.3"></script>
+  <script src="js/utils/formatters.js?v=1.3"></script>
+  <script src="js/utils/ui.js?v=1.3"></script>
+  <script src="js/db/idb.js?v=1.3"></script>
+  <script src="js/db/mockData.js?v=1.3"></script>
+  <script src="js/db/sync.js?v=1.3"></script>
+  <script src="js/modules/auth.js?v=1.3"></script>
+  <script src="js/modules/businessConfig.js?v=1.3"></script>
+  <script src="js/modules/inventory.js?v=1.3"></script>
+  <script src="js/modules/sales.js?v=1.3"></script>
+  <script src="js/modules/expenses.js?v=1.3"></script>
+  <script src="js/modules/cashClose.js?v=1.3"></script>
+  <script src="js/modules/accounting.js?v=1.3"></script>
+  <script src="js/modules/reports.js?v=1.3"></script>
+  <script src="js/modules/excelImport.js?v=1.3"></script>
+  <script src="js/app.js?v=1.3"></script>
 </body>
 </html>
