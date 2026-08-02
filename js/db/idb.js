@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONTA-SMART SENA - IndexedDB Engine
+   CONTA-SMART SENA - IndexedDB Engine (v2)
    ========================================================================== */
 
 const IDB = {
@@ -46,11 +46,16 @@ const IDB = {
         if (!db.objectStoreNames.contains('sync_queue')) {
           db.createObjectStore('sync_queue', { keyPath: 'id' });
         }
+
+        // Store: Configuración del Negocio (Nueva en v2)
+        if (!db.objectStoreNames.contains('configuracion')) {
+          db.createObjectStore('configuracion', { keyPath: 'id' });
+        }
       };
 
       request.onsuccess = (event) => {
         this.db = event.target.result;
-        console.log('IndexedDB inicializada correctamente.');
+        console.log('IndexedDB v2 inicializada correctamente.');
         resolve(this.db);
       };
 

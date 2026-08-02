@@ -245,3 +245,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================
+   Configuración de Negocio
+   ========================================== */
+
+#view-configuracion > div {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  #view-configuracion > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+.badge-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.badge-secondary {
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--text-subtle);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* Excel Import Drop Zone */
+#excel-import-modal .modal-card {
+  max-width: 520px;
+}
+
+/* Tabla de errores de importación */
+#excel-result-modal .modal-card {
+  max-width: 680px;
+}
+

@@ -22,8 +22,8 @@ const SyncManager = {
    * Inicializa el cliente Supabase utilizando las llaves guardadas o por defecto
    */
   initSupabaseClient() {
-    const url = localStorage.getItem('supabase_url') || CONFIG.SUPABASE_DEFAULT_URL;
-    const key = localStorage.getItem('supabase_key') || CONFIG.SUPABASE_DEFAULT_KEY;
+    const url = CONFIG.SUPABASE_DEFAULT_URL;
+    const key = CONFIG.SUPABASE_DEFAULT_KEY;
 
     if (window.supabase && typeof window.supabase.createClient === 'function' && url && key) {
       try {

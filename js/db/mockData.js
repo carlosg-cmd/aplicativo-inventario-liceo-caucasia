@@ -12,6 +12,8 @@ const MockData = {
       precio_venta: 145000,
       stock: 18,
       stock_minimo: 5,
+      talla: '40',
+      color: 'Negro/Azul',
       created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
       updated_at: new Date().toISOString(),
       sync_status: 'synced'
@@ -24,6 +26,8 @@ const MockData = {
       precio_venta: 169000,
       stock: 4,
       stock_minimo: 6, // Alerta Stock Bajo
+      talla: '41',
+      color: 'Marrón',
       created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
       updated_at: new Date().toISOString(),
       sync_status: 'synced'
@@ -36,6 +40,8 @@ const MockData = {
       precio_venta: 45000,
       stock: 25,
       stock_minimo: 8,
+      talla: 'M',
+      color: 'Blanco',
       created_at: new Date(Date.now() - 25 * 86400000).toISOString(),
       updated_at: new Date().toISOString(),
       sync_status: 'synced'
@@ -48,6 +54,8 @@ const MockData = {
       precio_venta: 110000,
       stock: 0, // Agotado
       stock_minimo: 5,
+      talla: '32',
+      color: 'Azul Oscuro',
       created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
       updated_at: new Date().toISOString(),
       sync_status: 'synced'
@@ -60,19 +68,9 @@ const MockData = {
       precio_venta: 155000,
       stock: 12,
       stock_minimo: 4,
+      talla: 'L',
+      color: 'Gris',
       created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
-      updated_at: new Date().toISOString(),
-      sync_status: 'synced'
-    },
-    {
-      id: 'prod-006',
-      nombre: 'Gorra Ajustable Algodón',
-      categoria: 'Accesorios',
-      precio_compra: 15000,
-      precio_venta: 32000,
-      stock: 3,
-      stock_minimo: 5, // Alerta Stock Bajo
-      created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
       updated_at: new Date().toISOString(),
       sync_status: 'synced'
     }
@@ -101,17 +99,6 @@ const MockData = {
         precio_unitario: 45000,
         valor_total: 135000,
         fecha: new Date(now.setHours(11, 15, 0)).toISOString(),
-        fecha_corta: today,
-        sync_status: 'synced'
-      },
-      {
-        id: 'sale-103',
-        producto_id: 'prod-005',
-        nombre_producto: 'Chaqueta Impermeable Urbana',
-        cantidad: 1,
-        precio_unitario: 155000,
-        valor_total: 155000,
-        fecha: new Date(now.setHours(14, 45, 0)).toISOString(),
         fecha_corta: today,
         sync_status: 'synced'
       }
@@ -146,23 +133,40 @@ const MockData = {
   },
 
   /**
-   * Sembra la base de datos local IndexedDB si está vacía
+   * Sembra SOLAMENTE la configuración básica del negocio si no existe.
+   * Se ejecuta automáticamente al abrir la aplicación.
    */
-  async seedIfEmpty() {
-    const prods = await IDB.getAll('productos');
-    if (prods.length === 0) {
-      console.log('Sembrando datos mock en IndexedDB...');
-      for (const p of this.products) {
-        await IDB.put('productos', p);
-      }
-      for (const s of this.getTodaySales()) {
-        await IDB.put('ventas', s);
-      }
-      for (const e of this.getTodayExpenses()) {
-        await IDB.put('gastos', e);
-      }
-      console.log('Sembrado de datos iniciales completado.');
+  async seedConfigIfEmpty() {
+    const savedConfig = await IDB.getById('configuracion', 'business_config');
+    if (!savedConfig) {
+      const defaultTemplate = CONFIG.BUSINESS_TEMPLATES.ropa_calzado;
+      await IDB.put('configuracion', {
+        id: 'business_config',
+        tipo_negocio: 'ropa_calzado',
+        campos_producto: JSON.parse(JSON.stringify(defaultTemplate.fields)),
+        updated_at: new Date().toISOString()
+      });
     }
+  },
+
+  /**
+   * Sembra TODOS los datos mock (configuración, productos, ventas, gastos).
+   * Solo se ejecuta manualmente desde el botón de configuración.
+   */
+  async seedAllData() {
+    await this.seedConfigIfEmpty();
+
+    console.log('Sembrando datos mock de prueba (Manual)...');
+    for (const p of this.products) {
+      await IDB.put('productos', p);
+    }
+    for (const s of this.getTodaySales()) {
+      await IDB.put('ventas', s);
+    }
+    for (const e of this.getTodayExpenses()) {
+      await IDB.put('gastos', e);
+    }
+    console.log('Sembrado de datos iniciales completado.');
   }
 };
 

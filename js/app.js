@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONTA-SMART SENA - App Main Router & Controller
+   CONTA-SMART SENA - App Main Router & Controller v1.1
    ========================================================================== */
 
 const AppRouter = {
@@ -9,22 +9,25 @@ const AppRouter = {
    * Inicializa la aplicación completa
    */
   async init() {
-    console.log('Inicializando ContaSmart SENA...');
-    
-    // 1. Inicializar Auth
-    AuthModule.init();
+    console.log('Inicializando ContaSmart SENA v1.1...');
 
-    // 2. Inicializar IndexedDB y Datos Semilla
+    // 1. Inicializar IndexedDB v2 y Configuración Básica
     await IDB.init();
-    await MockData.seedIfEmpty();
+    await MockData.seedConfigIfEmpty();
 
-    // 3. Inicializar Sync Manager
+    // 2. Inicializar Sync Manager (necesario antes de AuthModule para que Auth detecte Supabase)
     SyncManager.init();
 
-    // 4. Configurar Event Listeners Globales
+    // 3. Inicializar Auth (ahora async: verifica sesión Supabase si está configurado)
+    await AuthModule.init();
+
+    // 4. Inicializar Configuración de Negocio
+    await BusinessConfigModule.init();
+
+    // 5. Configurar Event Listeners Globales
     this.bindGlobalEvents();
 
-    // 5. Determinar vista inicial
+    // 6. Determinar vista inicial
     if (!AuthModule.isAuthenticated()) {
       this.navigate('login');
     } else {
@@ -38,19 +41,11 @@ const AppRouter = {
    * Navega hacia una vista específica de la SPA
    */
   async navigate(viewId) {
-    // Si no está autenticado y trata de ir a cualquier vista que no sea login, redirigir
-    if (!AuthModule.isAuthenticated() && viewId !== 'login') {
-      viewId = 'login';
-    }
-
-    // Si está autenticado e intenta ir a login, enviar a dashboard
-    if (AuthModule.isAuthenticated() && viewId === 'login') {
-      viewId = 'dashboard';
-    }
+    if (!AuthModule.isAuthenticated() && viewId !== 'login') viewId = 'login';
+    if (AuthModule.isAuthenticated() && viewId === 'login') viewId = 'dashboard';
 
     this.currentView = viewId;
 
-    // Controlar visibilidad del Layout principal vs Login
     const mainWrapper = document.getElementById('main-wrapper');
     const sidebar = document.getElementById('sidebar');
     const authView = document.getElementById('view-login');
@@ -64,24 +59,15 @@ const AppRouter = {
       if (sidebar) sidebar.style.display = 'flex';
       if (authView) authView.style.display = 'none';
 
-      // Activar la vista correspondiente
       document.querySelectorAll('.view-page').forEach(el => el.classList.remove('active'));
       const activeView = document.getElementById(`view-${viewId}`);
       if (activeView) activeView.classList.add('active');
 
-      // Actualizar enlace activo en Sidebar
       document.querySelectorAll('.nav-item').forEach(nav => {
-        if (nav.getAttribute('data-view') === viewId) {
-          nav.classList.add('active');
-        } else {
-          nav.classList.remove('active');
-        }
+        nav.classList.toggle('active', nav.getAttribute('data-view') === viewId);
       });
 
-      // Actualizar título de la página en Header
       this.updateHeaderTitle(viewId);
-
-      // Cargar datos de la vista
       await this.loadViewData(viewId);
     }
 
@@ -97,14 +83,17 @@ const AppRouter = {
     const descEl = document.getElementById('header-page-desc');
     if (!titleEl || !descEl) return;
 
+    const businessType = BusinessConfigModule.config?.tipo_negocio || 'ropa_calzado';
+    const businessLabel = CONFIG.BUSINESS_TEMPLATES[businessType]?.label || 'Negocio';
+
     const titles = {
       dashboard: { title: 'Dashboard Principal', desc: 'Resumen de ventas, gastos y alertas de inventario del día' },
-      inventario: { title: 'Gestión de Inventario', desc: 'Control de productos, categorías, precios y stock disponible' },
+      inventario: { title: `Inventario — ${businessLabel}`, desc: 'Control de productos, precios y stock según tu tipo de negocio' },
       ventas: { title: 'Registro de Ventas', desc: 'Histórico de ventas y emisión de recibos' },
       gastos: { title: 'Egresos y Nómina', desc: 'Control de gastos operacionales y pago de salarios a empleados' },
       cierres: { title: 'Cierre de Caja Diario', desc: 'Registro inmutable de cierres contables y comprobantes' },
       contabilidad: { title: 'Contabilidad Mensual', desc: 'Estado de Resultados y gráficos de rendimiento' },
-      configuracion: { title: 'Configuración & Supabase', desc: 'Parámetros de conexión a la nube y modo offline' }
+      configuracion: { title: 'Configuración del Negocio', desc: 'Tipo de negocio, plantillas de campos y conexión a la nube' }
     };
 
     const current = titles[viewId] || { title: 'ContaSmart SENA', desc: 'Sistema de Control Comercial' };
@@ -116,7 +105,6 @@ const AppRouter = {
    * Carga y refresca los datos específicos de cada vista
    */
   async loadViewData(viewId) {
-    // Cargar datos base
     await InventoryModule.loadProducts();
     await SalesModule.loadSales();
     await ExpensesModule.loadExpenses();
@@ -126,6 +114,8 @@ const AppRouter = {
       await this.renderDashboardView();
     } else if (viewId === 'contabilidad') {
       await AccountingModule.init();
+    } else if (viewId === 'configuracion') {
+      BusinessConfigModule.renderSettingsUI();
     }
   },
 
@@ -134,6 +124,7 @@ const AppRouter = {
    */
   async refreshCurrentView() {
     await this.loadViewData(this.currentView);
+    this.updateHeaderTitle(this.currentView);
   },
 
   /**
@@ -143,44 +134,36 @@ const AppRouter = {
     const todayStr = Formatters.getTodayString();
     const totals = await CashCloseModule.getDailyTotals(todayStr);
 
-    // KPI 1: Ventas Hoy
     const kpiSales = document.getElementById('kpi-today-sales');
     if (kpiSales) kpiSales.textContent = Formatters.currency(totals.totalSales);
 
-    // KPI 2: Gastos Hoy
     const kpiExpenses = document.getElementById('kpi-today-expenses');
     if (kpiExpenses) kpiExpenses.textContent = Formatters.currency(totals.totalExpenses);
 
-    // KPI 3: Saldo Neto Hoy
     const kpiNet = document.getElementById('kpi-today-net');
     if (kpiNet) {
       kpiNet.textContent = Formatters.currency(totals.netBalance);
       kpiNet.style.color = totals.netBalance >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)';
     }
 
-    // KPI 4: Utilidad Acumulada del Mes
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-
     const allSales = await IDB.getAll('ventas');
     const allExpenses = await IDB.getAll('gastos');
 
     const mSales = allSales.filter(s => {
       const d = new Date(s.fecha);
-      return d.getFullYear() === currentYear && (d.getMonth() + 1) === currentMonth;
-    }).reduce((sum, s) => sum + s.valor_total, 0);
+      return d.getFullYear() === now.getFullYear() && (d.getMonth() + 1) === now.getMonth() + 1;
+    }).reduce((sum, s) => sum + (s.valor_total || 0), 0);
 
     const mExpenses = allExpenses.filter(e => {
       const d = new Date(e.fecha);
-      return d.getFullYear() === currentYear && (d.getMonth() + 1) === currentMonth;
-    }).reduce((sum, e) => sum + e.valor, 0);
+      return d.getFullYear() === now.getFullYear() && (d.getMonth() + 1) === now.getMonth() + 1;
+    }).reduce((sum, e) => sum + (e.valor || 0), 0);
 
     const kpiMonthly = document.getElementById('kpi-monthly-profit');
     if (kpiMonthly) kpiMonthly.textContent = Formatters.currency(mSales - mExpenses);
 
-    // Renderizar transacciones recientes
-    this.renderRecentTransactions();
+    await this.renderRecentTransactions();
   },
 
   /**
@@ -202,7 +185,7 @@ const AppRouter = {
     const recent = combined.slice(0, 6);
 
     if (recent.length === 0) {
-      timeline.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 1rem;">No hay transacciones hoy.</div>';
+      timeline.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 1rem;">No hay transacciones registradas aún.</div>';
       return;
     }
 
@@ -210,7 +193,7 @@ const AppRouter = {
       <div class="timeline-item">
         <div class="timeline-left">
           <div class="timeline-icon ${item.type}">
-            ${item.type === 'sale' 
+            ${item.type === 'sale'
               ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'
               : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>'
             }
@@ -231,66 +214,51 @@ const AppRouter = {
    * Asigna eventos a formularios y botones
    */
   bindGlobalEvents() {
-    // Formulario de Login
+    // ── Login ──────────────────────────────────────────────
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
+      loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
-        if (AuthModule.login(email, pass)) {
-          this.navigate('dashboard');
-        }
+        const ok = await AuthModule.login(email, pass);
+        if (ok) this.navigate('dashboard');
       });
     }
 
-    // Navegación Sidebar
+    // ── Navegación Sidebar ─────────────────────────────────
     document.querySelectorAll('[data-view]').forEach(item => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
         const view = item.getAttribute('data-view');
         this.navigate(view);
-
-        // En móvil, cerrar sidebar tras clic
         const sidebar = document.getElementById('sidebar');
-        if (sidebar && window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-        }
+        if (sidebar && window.innerWidth <= 768) sidebar.classList.remove('open');
       });
     });
 
-    // Menú móvil
+    // ── Menú móvil ─────────────────────────────────────────
     const mobileBtn = document.getElementById('mobile-menu-toggle');
     if (mobileBtn) {
       mobileBtn.addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar')?.classList.toggle('open');
       });
     }
 
-    // Logout
+    // ── Logout ─────────────────────────────────────────────
     const logoutBtn = document.getElementById('btn-logout');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => AuthModule.logout());
-    }
+    if (logoutBtn) logoutBtn.addEventListener('click', () => AuthModule.logout());
 
-    // Formulario de Producto
+    // ── Formulario de Producto (DINÁMICO) ──────────────────
     const productForm = document.getElementById('product-form');
     if (productForm) {
       productForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        InventoryModule.saveProduct({
-          id: document.getElementById('product-id').value,
-          nombre: document.getElementById('product-name').value,
-          categoria: document.getElementById('product-category-select').value,
-          precio_compra: document.getElementById('product-cost').value,
-          precio_venta: document.getElementById('product-price').value,
-          stock: document.getElementById('product-stock').value,
-          stock_minimo: document.getElementById('product-stock-min').value
-        });
+        InventoryModule.saveProduct();
       });
     }
 
-    // Formulario de Entrada de Mercancía (Stock)
+    // ── Reabastecimiento ───────────────────────────────────
     const restockForm = document.getElementById('restock-form');
     if (restockForm) {
       restockForm.addEventListener('submit', (e) => {
@@ -305,7 +273,7 @@ const AppRouter = {
       });
     }
 
-    // Formulario de Venta
+    // ── Formulario de Venta ────────────────────────────────
     const saleForm = document.getElementById('sale-form');
     if (saleForm) {
       saleForm.addEventListener('submit', (e) => {
@@ -317,7 +285,7 @@ const AppRouter = {
       });
     }
 
-    // Formulario de Gasto General
+    // ── Formulario de Gasto ────────────────────────────────
     const expenseForm = document.getElementById('expense-form');
     if (expenseForm) {
       expenseForm.addEventListener('submit', (e) => {
@@ -330,7 +298,7 @@ const AppRouter = {
       });
     }
 
-    // Formulario de Nómina
+    // ── Formulario de Nómina ───────────────────────────────
     const payrollForm = document.getElementById('payroll-form');
     if (payrollForm) {
       payrollForm.addEventListener('submit', (e) => {
@@ -343,30 +311,58 @@ const AppRouter = {
       });
     }
 
-    // Buscador de Inventario
+    // ── Buscar y Filtrar Inventario ────────────────────────
     const searchProd = document.getElementById('search-product-input');
     const filterCat = document.getElementById('filter-category-select');
-    if (searchProd) {
-      searchProd.addEventListener('input', () => {
-        InventoryModule.renderProductTable(searchProd.value, filterCat ? filterCat.value : '');
-      });
-    }
-    if (filterCat) {
-      filterCat.addEventListener('change', () => {
-        InventoryModule.renderProductTable(searchProd ? searchProd.value : '', filterCat.value);
+    const updateInventory = () => {
+      InventoryModule.renderProductTable(
+        searchProd ? searchProd.value : '',
+        filterCat ? filterCat.value : ''
+      );
+    };
+    if (searchProd) searchProd.addEventListener('input', updateInventory);
+    if (filterCat) filterCat.addEventListener('change', updateInventory);
+
+    // ── Buscar y Filtrar Ventas ────────────────────────────
+    const searchSales = document.getElementById('search-sales-input');
+    const filterSalesDate = document.getElementById('filter-sales-date');
+    const updateSales = () => {
+      SalesModule.renderSalesTable(
+        filterSalesDate ? filterSalesDate.value : '',
+        searchSales ? searchSales.value : ''
+      );
+    };
+    if (searchSales) searchSales.addEventListener('input', updateSales);
+    if (filterSalesDate) filterSalesDate.addEventListener('change', updateSales);
+
+    // ── Importar Excel: validar tipo de archivo en tiempo real ─
+    const excelFileInput = document.getElementById('excel-file-input');
+    if (excelFileInput) {
+      excelFileInput.addEventListener('change', () => {
+        const file = excelFileInput.files[0];
+        if (file && !file.name.match(/\.(xlsx|xls)$/i)) {
+          UI.toast('Por favor selecciona un archivo Excel (.xlsx o .xls).', 'warning');
+          excelFileInput.value = '';
+        }
       });
     }
 
-    // Buscador de Ventas
-    const searchSales = document.getElementById('search-sales-input');
-    const filterSalesDate = document.getElementById('filter-sales-date');
-    if (searchSales || filterSalesDate) {
-      const updateSales = () => {
-        SalesModule.renderSalesTable(filterSalesDate ? filterSalesDate.value : '', searchSales ? searchSales.value : '');
-      };
-      if (searchSales) searchSales.addEventListener('input', updateSales);
-      if (filterSalesDate) filterSalesDate.addEventListener('change', updateSales);
-    }
+
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    // ── Tecla Escape para cerrar modales ───────────────────
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+      }
+    });
   }
 };
 
